@@ -1,0 +1,87 @@
+<!-- AI Sidebar Structure -->
+<div id="ai-sidebar" class="ai-sidebar collapsed">
+  <!-- Sidebar Toggle -->
+  <button id="sidebar-toggle" class="sidebar-toggle" title="Toggle AI Assistant">
+    <span class="toggle-icon">🤖</span>
+  </button>
+  
+  <!-- Sidebar Content -->
+  <div class="sidebar-content">
+    <!-- Header -->
+    <div class="sidebar-header">
+      <h2>AI Assistant</h2>
+      <span class="ai-model-badge">AI Assistant</span>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <button class="quick-action-btn" data-action="summarize">
+        <span class="action-icon">📝</span>
+        <span class="action-text">Summarize</span>
+      </button>
+      <button class="quick-action-btn" data-action="key-points">
+        <span class="action-icon">🔑</span>
+        <span class="action-text">Key Points</span>
+      </button>
+      <button class="quick-action-btn" data-action="translate">
+        <span class="action-icon">🌐</span>
+        <span class="action-text">Translate</span>
+      </button>
+      <button class="quick-action-btn" data-action="simplify">
+        <span class="action-icon">🎯</span>
+        <span class="action-text">Simplify</span>
+      </button>
+    </div>
+    
+    <!-- Chat Interface -->
+    <div class="ai-chat-container">
+      <div class="chat-messages" id="chat-messages">
+        <div class="chat-message ai-message">
+          <div class="message-avatar">🤖</div>
+          <div class="message-content">
+            Hi! I'm your AI browsing assistant. I can help you understand, analyze, and interact with any webpage. What would you like to know?
+          </div>
+        </div>
+      </div>
+      
+      <!-- Chat Input -->
+      <div class="chat-input-container">
+        <textarea 
+          id="chat-input" 
+          class="chat-input" 
+          placeholder="Ask anything about this page..."
+          rows="2"
+        ></textarea>
+        <button id="send-chat" class="send-button" title="Send message">
+          <span>→</span>
+        </button>
+      </div>
+    </div>
+    
+    <!-- Page Context -->
+    <div class="page-context">
+      <div class="context-header">
+        <span class="context-icon">📄</span>
+        <span class="context-title">Current Page</span>
+      </div>
+      <div class="context-info" id="page-context-info">
+        <div class="context-url" id="context-url">No page loaded</div>
+        <div class="context-stats" id="context-stats">
+          <span class="stat-item">Words: <span id="word-count">0</span></span>
+          <span class="stat-item">Reading time: <span id="reading-time">0 min</span></span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- History & Insights -->
+    <div class="sidebar-section">
+      <h3>Recent Insights</h3>
+      <div class="insights-list" id="recent-insights">
+        <div class="empty-state">
+          <span class="empty-icon">💡</span>
+          <p>Your AI insights will appear here</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

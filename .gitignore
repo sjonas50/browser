@@ -1,0 +1,103 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build outputs
+build/
+dist/
+out/
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+
+# Chromium specific
+depot_tools/
+chromium/
+src/out/
+*.ninja
+*.ninja_deps
+*.ninja_log
+
+# AI Models
+models/
+*.onnx
+*.bin
+*.safetensors
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+.env.*.local
+
+# Logs
+logs/
+*.log
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Security and private files
+*.pem
+*.key
+*.cert
+*.crt
+private/
+secrets/
+config/secrets.json
+
+# Application data
+/storage/
+/user-data/
+/sessions/
+/cache/
+*.db
+*.sqlite
+
+# Backup files
+*.backup
+*.bak
+*.old
+~*
+
+# Electron specific
+electron-builder.yml
+electron-builder.json
+app/
+
+# Lock files (keep package-lock.json for npm)
+yarn.lock
+pnpm-lock.yaml
+
+# Local development
+.local/
+.dev/
+
+# Debug logs specific to this project
+ai-debug.log
+ai-error.log

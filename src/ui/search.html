@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Search - The Attic AI Browser</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        .background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 50% 50%, rgba(74, 158, 255, 0.1) 0%, transparent 50%);
+            animation: pulse 10s ease-in-out infinite;
+            z-index: -1;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.2); opacity: 0.4; }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Logo and title */
+        .header {
+            margin-bottom: 60px;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo {
+            font-size: 80px;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 0 30px rgba(74, 158, 255, 0.5));
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        h1 {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #4a9eff 0%, #b794f6 50%, #4a9eff 100%);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradient 3s ease infinite;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.6);
+            font-weight: 300;
+        }
+
+        /* Search box */
+        .search-container {
+            margin-bottom: 40px;
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .search-box {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 20px 60px 20px 24px;
+            font-size: 18px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            color: #ffffff;
+            outline: none;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .search-input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .search-input:focus {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: #4a9eff;
+            box-shadow: 0 0 0 4px rgba(74, 158, 255, 0.1);
+        }
+
+        .search-button {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, #4a9eff, #b794f6);
+            border: none;
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .search-button:hover {
+            transform: translateY(-50%) scale(1.05);
+            box-shadow: 0 4px 20px rgba(74, 158, 255, 0.4);
+        }
+
+        /* Example searches */
+        .examples {
+            animation: fadeInUp 0.8s ease-out 0.4s both;
+        }
+
+        .examples-title {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .example-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin-bottom: 40px;
+        }
+
+        .example-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .example-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .example-card:hover::before {
+            left: 100%;
+        }
+
+        .example-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(74, 158, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .example-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+
+        .example-text {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.4;
+        }
+
+        /* Quick links */
+        .quick-links {
+            margin-top: 60px;
+            animation: fadeInUp 0.8s ease-out 0.6s both;
+        }
+
+        .links-row {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .quick-link {
+            padding: 8px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .quick-link:hover {
+            background: rgba(74, 158, 255, 0.1);
+            border-color: #4a9eff;
+            color: #4a9eff;
+            transform: translateY(-2px);
+        }
+
+        /* Powered by badge */
+        .powered-by {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 16px;
+            background: rgba(74, 158, 255, 0.1);
+            border: 1px solid rgba(74, 158, 255, 0.3);
+            border-radius: 16px;
+            font-size: 12px;
+            color: #4a9eff;
+            animation: fadeIn 1s ease-out 0.8s both;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 32px;
+            }
+            .logo {
+                font-size: 60px;
+            }
+            .example-grid {
+                grid-template-columns: 1fr;
+            }
+            .container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="background"></div>
+
+    <div class="container">
+        <div class="header">
+            <div class="logo">🔮</div>
+            <h1>AI Search</h1>
+            <p class="subtitle">Ask anything, discover everything, or visit any website</p>
+        </div>
+
+        <div class="search-container">
+            <div class="search-box">
+                <input 
+                    type="text" 
+                    class="search-input" 
+                    placeholder="Search with AI or enter any URL..." 
+                    id="search-input"
+                    autofocus
+                >
+                <button class="search-button" onclick="performSearch()">
+                    →
+                </button>
+            </div>
+        </div>
+
+        <div class="examples">
+            <p class="examples-title">Try these searches or type any URL</p>
+            <div class="example-grid">
+                <div class="example-card" onclick="searchExample('Explain quantum computing in simple terms')">
+                    <div class="example-icon">⚛️</div>
+                    <div class="example-text">Explain quantum computing in simple terms</div>
+                </div>
+                <div class="example-card" onclick="searchExample('What are the latest breakthroughs in AI?')">
+                    <div class="example-icon">🤖</div>
+                    <div class="example-text">What are the latest breakthroughs in AI?</div>
+                </div>
+                <div class="example-card" onclick="searchExample('How does photosynthesis work?')">
+                    <div class="example-icon">🌱</div>
+                    <div class="example-text">How does photosynthesis work?</div>
+                </div>
+                <div class="example-card" onclick="searchExample('Compare React vs Vue vs Angular')">
+                    <div class="example-icon">💻</div>
+                    <div class="example-text">Compare React vs Vue vs Angular</div>
+                </div>
+                <div class="example-card" onclick="searchExample('History of the internet')">
+                    <div class="example-icon">🌐</div>
+                    <div class="example-text">History of the internet</div>
+                </div>
+                <div class="example-card" onclick="searchExample('Best practices for web security')">
+                    <div class="example-icon">🔒</div>
+                    <div class="example-text">Best practices for web security</div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 30px; text-align: center;">
+                <p style="color: rgba(255, 255, 255, 0.5); font-size: 14px; margin-bottom: 16px;">
+                    💡 Tip: You can also type any website URL like <span style="color: #4a9eff;">github.com</span> or <span style="color: #4a9eff;">news.ycombinator.com</span>
+                </p>
+            </div>
+        </div>
+
+        <div class="quick-links">
+            <div class="links-row">
+                <a href="https://www.theattic.ai" class="quick-link">
+                    <span>🏠</span>
+                    <span>The Attic AI</span>
+                </a>
+                <a href="https://github.com" class="quick-link">
+                    <span>💾</span>
+                    <span>GitHub</span>
+                </a>
+                <a href="https://news.ycombinator.com" class="quick-link">
+                    <span>📰</span>
+                    <span>Hacker News</span>
+                </a>
+                <a href="https://twitter.com" class="quick-link">
+                    <span>🐦</span>
+                    <span>Twitter</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="powered-by">
+        <span>✨</span>
+        <span>Powered by The Attic AI</span>
+    </div>
+
+    <script>
+        // Handle search input
+        const searchInput = document.getElementById('search-input');
+        
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+
+        function performSearch() {
+            const query = searchInput.value.trim();
+            if (query) {
+                // Check if we're in a webview context
+                if (window.location.protocol === 'file:') {
+                    // We're in the browser - navigate to trigger search
+                    // Use parent window navigation if available
+                    try {
+                        // Trigger navigation in the parent browser context
+                        window.location.href = query;
+                    } catch (e) {
+                        console.error('Navigation error:', e);
+                    }
+                } else {
+                    // Fallback
+                    window.location.href = query;
+                }
+            }
+        }
+
+        function searchExample(query) {
+            searchInput.value = query;
+            // Add a small delay to show the query being filled
+            setTimeout(() => performSearch(), 100);
+        }
+
+        // Focus effect
+        searchInput.addEventListener('focus', () => {
+            document.querySelector('.search-box').style.transform = 'scale(1.02)';
+        });
+
+        searchInput.addEventListener('blur', () => {
+            document.querySelector('.search-box').style.transform = 'scale(1)';
+        });
+    </script>
+</body>
+</html>
