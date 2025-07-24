@@ -213,14 +213,12 @@ class BrowserRenderer {
                 e.preventDefault();
                 // Create new tab with search page
                 this.createNewTab('./search.html');
-            } else if (e.isMainFrame && url && url.includes('search.html')) {
-                // Handle navigation from search page
-                const currentUrl = new URL(e.url, window.location.href);
-                if (currentUrl.pathname && !currentUrl.pathname.includes('search.html') && !currentUrl.pathname.includes('.html')) {
-                    e.preventDefault();
-                    // It's a search query from the search page
-                    this.navigate(decodeURIComponent(currentUrl.pathname.substring(1)));
-                }
+            } else if (e.url.startsWith('search://')) {
+                e.preventDefault();
+                // Extract the search query
+                const query = decodeURIComponent(e.url.substring('search://'.length));
+                // Navigate to perform the search
+                this.navigate(query);
             }
         });
         

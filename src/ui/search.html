@@ -407,20 +407,9 @@
         function performSearch() {
             const query = searchInput.value.trim();
             if (query) {
-                // Check if we're in a webview context
-                if (window.location.protocol === 'file:') {
-                    // We're in the browser - navigate to trigger search
-                    // Use parent window navigation if available
-                    try {
-                        // Trigger navigation in the parent browser context
-                        window.location.href = query;
-                    } catch (e) {
-                        console.error('Navigation error:', e);
-                    }
-                } else {
-                    // Fallback
-                    window.location.href = query;
-                }
+                // Navigate to a special URL that the browser will intercept
+                // This will trigger the browser's navigation handler
+                window.location.href = `search://${encodeURIComponent(query)}`;
             }
         }
 
