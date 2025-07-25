@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Browsing History - AI Browser</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .history-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .history-header {
+            margin-bottom: 30px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 20px;
+        }
+        
+        .history-header h1 {
+            margin: 0 0 15px 0;
+            font-size: 28px;
+            font-weight: 300;
+        }
+        
+        .history-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .search-box {
+            flex: 1;
+            max-width: 400px;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 10px 15px;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 6px;
+            color: #e0e0e0;
+            font-size: 14px;
+            outline: none;
+        }
+        
+        .search-box input:focus {
+            border-color: #007aff;
+        }
+        
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .filter-btn {
+            padding: 8px 16px;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 6px;
+            color: #e0e0e0;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .filter-btn:hover {
+            background: #333;
+            border-color: #555;
+        }
+        
+        .filter-btn.active {
+            background: #007aff;
+            border-color: #007aff;
+            color: white;
+        }
+        
+        .clear-btn {
+            padding: 8px 16px;
+            background: #d32f2f;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .clear-btn:hover {
+            background: #b71c1c;
+        }
+        
+        .history-list {
+            margin-top: 20px;
+        }
+        
+        .history-group {
+            margin-bottom: 30px;
+        }
+        
+        .history-group h2 {
+            font-size: 16px;
+            font-weight: 500;
+            color: #999;
+            margin: 0 0 15px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .history-item {
+            background: #2a2a2a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            transition: all 0.2s;
+            cursor: pointer;
+            display: flex;
+            align-items: start;
+            gap: 15px;
+        }
+        
+        .history-item:hover {
+            background: #333;
+            border-color: #444;
+        }
+        
+        .history-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+            width: 30px;
+            text-align: center;
+        }
+        
+        .history-icon.search {
+            color: #66bb6a;
+        }
+        
+        .history-icon.visit {
+            color: #42a5f5;
+        }
+        
+        .history-icon.knowledge {
+            color: #ffa726;
+        }
+        
+        .history-content {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .history-title {
+            font-size: 16px;
+            font-weight: 500;
+            margin: 0 0 5px 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .history-details {
+            font-size: 14px;
+            color: #999;
+            margin: 0;
+        }
+        
+        .history-meta {
+            display: flex;
+            gap: 15px;
+            margin-top: 5px;
+            font-size: 13px;
+            color: #777;
+        }
+        
+        .history-time {
+            flex-shrink: 0;
+            font-size: 13px;
+            color: #777;
+            align-self: center;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        
+        .empty-state h3 {
+            font-size: 20px;
+            font-weight: 400;
+            margin: 0 0 10px 0;
+        }
+        
+        .empty-state p {
+            font-size: 16px;
+            margin: 0;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 3px solid #333;
+            border-top-color: #007aff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="history-container">
+        <div class="history-header">
+            <h1>Browsing History</h1>
+            <div class="history-controls">
+                <div class="search-box">
+                    <input type="text" id="history-search" placeholder="Search history...">
+                </div>
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-filter="all">All</button>
+                    <button class="filter-btn" data-filter="search">Searches</button>
+                    <button class="filter-btn" data-filter="visit">Pages</button>
+                </div>
+                <button class="clear-btn" id="clear-history">Clear History</button>
+            </div>
+        </div>
+        
+        <div id="history-list" class="history-list">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Loading history...</p>
+            </div>
+        </div>
+    </div>
+    
+    <script src="history.js"></script>
+</body>
+</html>

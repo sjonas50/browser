@@ -173,6 +173,18 @@ Provide a comprehensive answer that:
             status: this.isInitialized ? 'ready' : 'not-initialized'
         };
     }
+    
+    async setKnowledgeBaseSettings(settings) {
+        // Update knowledge base settings in the backend AI Manager
+        if (window.electronAPI && window.electronAPI.knowledgeBase) {
+            try {
+                await window.electronAPI.knowledgeBase.updateSettings(settings);
+                console.log('[ClaudeAI] Knowledge base settings updated:', settings);
+            } catch (error) {
+                console.error('[ClaudeAI] Failed to update knowledge base settings:', error);
+            }
+        }
+    }
 }
 
 export default ClaudeAIHandler;

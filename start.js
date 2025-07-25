@@ -46,6 +46,15 @@ console.log('📋 Configuration:');
 console.log(`   Environment: ${process.env.NODE_ENV || 'production'}`);
 console.log(`   Claude API: ${process.env.ANTHROPIC_API_KEY ? '✅ Configured' : '❌ Not configured'}`);
 console.log(`   Debug Mode: ${process.env.DEBUG === 'true' ? 'Enabled' : 'Disabled'}`);
+
+// Check search API configuration
+let searchApi = '❌ Not configured (using limited DuckDuckGo)';
+if (process.env.BRAVE_SEARCH_API_KEY) {
+    searchApi = '✅ Brave Search (1 query/sec limit)';
+} else if (process.env.GOOGLE_SEARCH_API_KEY) {
+    searchApi = '✅ Google Custom Search';
+}
+console.log(`   Search API: ${searchApi}`);
 console.log('');
 
 // Launch Electron

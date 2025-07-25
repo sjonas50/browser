@@ -1,0 +1,219 @@
+<!-- Document Viewer Modal -->
+<div id="document-viewer-modal" class="document-viewer-modal hidden">
+    <div class="viewer-container">
+        <div class="viewer-header">
+            <h2 id="doc-viewer-title">Document Title</h2>
+            <div class="viewer-actions">
+                <button class="icon-btn" id="edit-doc-btn" title="Edit">✏️</button>
+                <button class="icon-btn" id="export-doc-btn" title="Export">📤</button>
+                <button class="icon-btn" id="delete-doc-btn" title="Delete">🗑️</button>
+                <button class="icon-btn" id="close-viewer-btn" title="Close">✕</button>
+            </div>
+        </div>
+        
+        <div class="viewer-metadata">
+            <span class="meta-item">
+                <span class="meta-label">Source:</span>
+                <span id="doc-source" class="meta-value">manual</span>
+            </span>
+            <span class="meta-item">
+                <span class="meta-label">Collection:</span>
+                <span id="doc-collection" class="meta-value">personal</span>
+            </span>
+            <span class="meta-item">
+                <span class="meta-label">Words:</span>
+                <span id="doc-wordcount" class="meta-value">0</span>
+            </span>
+            <span class="meta-item">
+                <span class="meta-label">Added:</span>
+                <span id="doc-timestamp" class="meta-value">Just now</span>
+            </span>
+        </div>
+        
+        <div class="viewer-content" id="doc-viewer-content">
+            <!-- Document content will be displayed here -->
+        </div>
+        
+        <!-- Edit mode -->
+        <div class="viewer-edit-mode hidden" id="doc-edit-mode">
+            <input type="text" id="doc-edit-title" class="edit-title-input" placeholder="Document title">
+            <textarea id="doc-edit-content" class="edit-content-textarea" placeholder="Document content"></textarea>
+            <div class="edit-actions">
+                <button class="action-btn" onclick="window.documentViewer.saveEdit()">Save</button>
+                <button class="text-btn" onclick="window.documentViewer.cancelEdit()">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Document Viewer Styles */
+.document-viewer-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    backdrop-filter: blur(8px);
+}
+
+.document-viewer-modal.hidden {
+    display: none;
+}
+
+.viewer-container {
+    background: var(--bg-secondary);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 900px;
+    height: 80vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.viewer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.viewer-header h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.viewer-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.viewer-metadata {
+    display: flex;
+    gap: 24px;
+    padding: 16px 24px;
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid var(--border-color);
+    font-size: 13px;
+}
+
+.meta-item {
+    display: flex;
+    gap: 8px;
+}
+
+.meta-label {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.meta-value {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.viewer-content {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+    font-size: 15px;
+    line-height: 1.8;
+    color: var(--text-primary);
+}
+
+.viewer-content h1,
+.viewer-content h2,
+.viewer-content h3 {
+    margin-top: 24px;
+    margin-bottom: 16px;
+}
+
+.viewer-content p {
+    margin-bottom: 16px;
+}
+
+.viewer-content ul,
+.viewer-content ol {
+    margin-bottom: 16px;
+    padding-left: 24px;
+}
+
+.viewer-content pre {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 16px;
+    overflow-x: auto;
+    margin-bottom: 16px;
+}
+
+.viewer-content code {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Consolas', 'Monaco', monospace;
+}
+
+/* Edit mode */
+.viewer-edit-mode {
+    flex: 1;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.edit-title-input {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: white;
+    font-size: 18px;
+    font-weight: 500;
+}
+
+.edit-content-textarea {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 16px;
+    color: white;
+    font-size: 14px;
+    line-height: 1.6;
+    resize: none;
+}
+
+.edit-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+/* Scrollbar */
+.viewer-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.viewer-content::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.viewer-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+.viewer-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+</style>

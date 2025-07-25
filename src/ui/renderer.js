@@ -77,6 +77,8 @@ class BrowserRenderer {
         this.reloadBtn = getElement('reload-btn');
         this.urlBar = getElement('url-bar');
         this.aiBtn = getElement('ai-assist-btn');
+        this.settingsBtn = getElement('settings-btn');
+        this.bookmarkBtn = getElement('bookmark-btn');
         
         // Tab elements
         this.tabsContainer = getElement('tabs-container');
@@ -127,6 +129,12 @@ class BrowserRenderer {
         
         // Tab controls
         if (this.newTabBtn) this.newTabBtn.addEventListener('click', () => this.createNewTab());
+        
+        // Settings button
+        if (this.settingsBtn) this.settingsBtn.addEventListener('click', () => this.showSettingsMenu());
+        
+        // Bookmark button
+        if (this.bookmarkBtn) this.bookmarkBtn.addEventListener('click', () => this.toggleBookmark());
         
         // Global keyboard shortcuts
         document.addEventListener('keydown', (e) => {
@@ -380,6 +388,9 @@ class BrowserRenderer {
                 // Display comprehensive results
                 this.displayDeepSearchResults(searchData);
                 
+                // Store search in history
+                await this.addSearchToHistory(processedUrl, searchData);
+                
                 // Don't navigate away - keep the AI results visible
                 this.updateStatus('AI search completed');
                 
@@ -610,8 +621,28 @@ class BrowserRenderer {
                     <div class="search-section ai-answer">
                         <h3>${section.title}</h3>
                         <p>${section.content}</p>
+                        ${section.sources ? '<div class="knowledge-indicator">📚 Enhanced with personal knowledge</div>' : ''}
                     </div>
                 `;
+            } else if (section.type === 'knowledge-results') {
+                htmlContent += `
+                    <div class="search-section knowledge-results">
+                        <h3>${section.title}</h3>
+                        <ul>
+                `;
+                section.results.forEach(result => {
+                    htmlContent += `
+                        <li class="knowledge-result">
+                            <span class="knowledge-icon">📄</span>
+                            <div class="knowledge-content">
+                                <strong>${result.title}</strong>
+                                <p>${result.snippet || result.content}</p>
+                                <small>Score: ${(result.score * 100).toFixed(0)}% match</small>
+                            </div>
+                        </li>
+                    `;
+                });
+                htmlContent += '</ul></div>';
             } else if (section.type === 'web-results') {
                 htmlContent += `
                     <div class="search-section web-results">
@@ -977,6 +1008,20 @@ class BrowserRenderer {
                 if (this.sidebarHandler) {
                     this.sidebarHandler.onPageChange();
                 }
+                
+                // Add to history if it's not a local or special URL
+                if (!url.includes('search.html') && 
+                    !url.includes('welcome.html') && 
+                    !url.startsWith('file://') && 
+                    !url.startsWith('about:') &&
+                    !url.startsWith('ai://')) {
+                    // Get the page title from the webview
+                    const webview = document.getElementById(`webview-${tabId}`);
+                    if (webview) {
+                        const title = webview.getTitle() || url;
+                        this.addPageVisitToHistory(url, title);
+                    }
+                }
             }
         }
         
@@ -1047,6 +1092,340 @@ class BrowserRenderer {
         if (this.sidebarHandler) {
             this.sidebarHandler.toggleSidebar();
             this.hideAIResponse(); // Close AI menu
+        }
+    }
+    
+    showSettingsMenu() {
+        const menuHTML = `
+            <div class="settings-menu">
+                <h3>⚙️ Settings</h3>
+                <div class="settings-menu-options">
+                    <button class="settings-menu-item" onclick="window.browser.toggleKnowledgeBase()">
+                        <span class="settings-menu-icon">📚</span>
+                        <div class="settings-menu-text">
+                            <strong>Knowledge Base</strong>
+                            <small>Manage your personal knowledge library</small>
+                        </div>
+                    </button>
+                    <button class="settings-menu-item" onclick="window.browser.openHistory()">
+                        <span class="settings-menu-icon">📜</span>
+                        <div class="settings-menu-text">
+                            <strong>History</strong>
+                            <small>View your browsing and search history</small>
+                        </div>
+                    </button>
+                    <button class="settings-menu-item" onclick="window.browser.openPreferences()">
+                        <span class="settings-menu-icon">🎨</span>
+                        <div class="settings-menu-text">
+                            <strong>Preferences</strong>
+                            <small>Theme, privacy, and display settings</small>
+                        </div>
+                    </button>
+                    <button class="settings-menu-item" onclick="window.browser.openSecurity()">
+                        <span class="settings-menu-icon">🔒</span>
+                        <div class="settings-menu-text">
+                            <strong>Security & Privacy</strong>
+                            <small>Manage security and privacy options</small>
+                        </div>
+                    </button>
+                    <button class="settings-menu-item" onclick="window.browser.openAbout()">
+                        <span class="settings-menu-icon">ℹ️</span>
+                        <div class="settings-menu-text">
+                            <strong>About</strong>
+                            <small>Version and license information</small>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        this.showOverlay(menuHTML);
+    }
+    
+    toggleKnowledgeBase() {
+        if (!this.knowledgeBaseHandler) {
+            // Initialize knowledge base if not already done
+            this.initializeKnowledgeBase();
+        } else {
+            this.knowledgeBaseHandler.toggleSidebar();
+        }
+        this.hideAIResponse(); // Close settings menu
+    }
+    
+    openHistory() {
+        // Open history in a new tab
+        const historyPath = './history.html';
+        this.createNewTab(historyPath);
+        this.hideAIResponse(); // Close settings menu
+    }
+    
+    openPreferences() {
+        // Placeholder for preferences
+        this.showNotification('Preferences coming soon!', 'info');
+        this.hideAIResponse();
+    }
+    
+    openSecurity() {
+        // Placeholder for security settings
+        this.showNotification('Security settings coming soon!', 'info');
+        this.hideAIResponse();
+    }
+    
+    openAbout() {
+        // Show about dialog
+        const aboutHTML = `
+            <div class="about-dialog">
+                <h2>🌐 AI Browser</h2>
+                <p>Version 1.0.0</p>
+                <p>An intelligent browser powered by Claude AI</p>
+                <br>
+                <p><small>Built with Electron and Claude API</small></p>
+                <button onclick="window.browser.hideAIResponse()">Close</button>
+            </div>
+        `;
+        this.showOverlay(aboutHTML);
+    }
+    
+    async initializeKnowledgeBase() {
+        try {
+            // First load the HTML
+            const response = await fetch('knowledge-base-sidebar.html');
+            const html = await response.text();
+            
+            // Create a container for the knowledge base
+            const container = document.createElement('div');
+            container.id = 'knowledge-base-container';
+            container.innerHTML = html;
+            document.body.appendChild(container);
+            
+            // Initialize the handler
+            const KnowledgeBaseHandler = (await import('./knowledge-base-handler.js')).default;
+            this.knowledgeBaseHandler = new KnowledgeBaseHandler(this.aiHandler);
+            window.knowledgeBaseInstance = this.knowledgeBaseHandler;
+            
+            // Open the sidebar
+            this.knowledgeBaseHandler.toggleSidebar();
+        } catch (error) {
+            console.error('Failed to initialize knowledge base:', error);
+            this.showNotification('Failed to open knowledge base', 'error');
+        }
+    }
+    
+    openPreferences() {
+        // TODO: Implement preferences dialog
+        this.showNotification('Preferences coming soon', 'info');
+        this.hideAIResponse();
+    }
+    
+    openSecurity() {
+        // TODO: Implement security settings
+        this.showNotification('Security settings coming soon', 'info');
+        this.hideAIResponse();
+    }
+    
+    openAbout() {
+        const aboutHTML = `
+            <div class="about-dialog">
+                <h3>AI Browser</h3>
+                <p>Version 1.0.0</p>
+                <p>Powered by The Attic AI</p>
+                <p>Built with Electron and Claude 4 Opus</p>
+                <br>
+                <small>© 2024 All rights reserved</small>
+            </div>
+        `;
+        this.showOverlay(aboutHTML);
+    }
+    
+    showOverlay(htmlContent) {
+        // Update the AI response overlay with the provided content
+        if (this.responseContent) {
+            this.responseContent.innerHTML = htmlContent;
+            this.aiResponse.classList.remove('hidden');
+            this.aiResponse.classList.add('visible');
+            this.aiResponseVisible = true;
+        }
+    }
+    
+    async toggleBookmark() {
+        const webview = this.getActiveWebview();
+        if (!webview) {
+            this.showNotification('No page to bookmark', 'error');
+            return;
+        }
+        
+        const url = webview.getURL();
+        const title = webview.getTitle();
+        
+        // Check if already bookmarked
+        const isBookmarked = await this.isPageBookmarked(url);
+        
+        if (isBookmarked) {
+            // Remove bookmark
+            this.showNotification('Bookmark removed', 'info');
+            this.updateBookmarkIcon(false);
+        } else {
+            // Add bookmark
+            this.showBookmarkDialog(url, title);
+        }
+    }
+    
+    showBookmarkDialog(url, title) {
+        const dialogHTML = `
+            <div class="bookmark-dialog">
+                <h3>Add Bookmark</h3>
+                <div class="bookmark-form">
+                    <input type="text" id="bookmark-title" class="bookmark-input" value="${this.escapeHtml(title)}" placeholder="Title">
+                    <input type="text" id="bookmark-url" class="bookmark-input" value="${this.escapeHtml(url)}" readonly>
+                    <textarea id="bookmark-notes" class="bookmark-textarea" placeholder="Notes (optional)"></textarea>
+                    <input type="text" id="bookmark-tags" class="bookmark-input" placeholder="Tags (comma separated)">
+                    <div class="bookmark-actions">
+                        <button class="action-btn" onclick="window.browser.saveBookmark()">Save</button>
+                        <button class="text-btn" onclick="window.browser.hideAIResponse()">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        this.showOverlay(dialogHTML);
+    }
+    
+    async saveBookmark() {
+        const title = document.getElementById('bookmark-title').value;
+        const url = document.getElementById('bookmark-url').value;
+        const notes = document.getElementById('bookmark-notes').value;
+        const tags = document.getElementById('bookmark-tags').value.split(',').map(t => t.trim()).filter(t => t);
+        
+        if (!title || !url) {
+            this.showNotification('Title and URL are required', 'error');
+            return;
+        }
+        
+        try {
+            // Initialize knowledge base if needed
+            if (!this.knowledgeBaseHandler) {
+                await this.initializeKnowledgeBase();
+            }
+            
+            // Use IPC to add bookmark
+            const bookmarkId = await window.electronAPI.knowledgeBase.addDocument(
+                `${title}\n${url}\n${notes || ''}`,
+                {
+                    title,
+                    url,
+                    source: 'bookmark',
+                    collection: 'bookmarks',
+                    type: 'bookmark',
+                    notes,
+                    tags,
+                    favicon: this.getActiveWebview()?.getFavicon()
+                }
+            );
+            
+            this.showNotification('Bookmark saved', 'success');
+            this.updateBookmarkIcon(true);
+            this.hideAIResponse();
+        } catch (error) {
+            console.error('Failed to save bookmark:', error);
+            this.showNotification('Failed to save bookmark', 'error');
+        }
+    }
+    
+    async isPageBookmarked(url) {
+        // TODO: Implement bookmark checking
+        return false;
+    }
+    
+    updateBookmarkIcon(isBookmarked) {
+        if (this.bookmarkBtn) {
+            this.bookmarkBtn.textContent = isBookmarked ? '⭐' : '☆';
+            this.bookmarkBtn.classList.toggle('bookmarked', isBookmarked);
+        }
+    }
+    
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    // History management methods
+    async addSearchToHistory(query, searchData) {
+        try {
+            const historyEntry = {
+                type: 'search',
+                query: query,
+                title: `Search: ${query}`,
+                timestamp: Date.now(),
+                results: {
+                    sourcesFound: searchData.sources ? searchData.sources.length : 0,
+                    hasKnowledgeBase: !!searchData.queryAnalysis,
+                    searchEngine: 'AI Deep Search'
+                }
+            };
+            
+            await window.electronAPI.history.add(historyEntry);
+            console.log('[Browser] Added search to history:', query);
+        } catch (error) {
+            console.error('[Browser] Failed to add search to history:', error);
+        }
+    }
+    
+    async addPageVisitToHistory(url, title) {
+        try {
+            const historyEntry = {
+                type: 'visit',
+                url: url,
+                title: title || url,
+                timestamp: Date.now()
+            };
+            
+            await window.electronAPI.history.add(historyEntry);
+            console.log('[Browser] Added page visit to history:', url);
+        } catch (error) {
+            console.error('[Browser] Failed to add page visit to history:', error);
+        }
+    }
+    
+    async getSearchHistory(limit = 20) {
+        try {
+            const history = await window.electronAPI.history.get({ 
+                type: 'search', 
+                limit: limit 
+            });
+            return history;
+        } catch (error) {
+            console.error('[Browser] Failed to get search history:', error);
+            return [];
+        }
+    }
+    
+    async getFullHistory(limit = 50) {
+        try {
+            const history = await window.electronAPI.history.get({ limit: limit });
+            return history;
+        } catch (error) {
+            console.error('[Browser] Failed to get history:', error);
+            return [];
+        }
+    }
+    
+    async searchHistory(query) {
+        try {
+            const results = await window.electronAPI.history.search(query);
+            return results;
+        } catch (error) {
+            console.error('[Browser] Failed to search history:', error);
+            return [];
+        }
+    }
+    
+    async clearHistory(olderThan = 0) {
+        try {
+            await window.electronAPI.history.clear(olderThan);
+            console.log('[Browser] History cleared');
+        } catch (error) {
+            console.error('[Browser] Failed to clear history:', error);
         }
     }
 }

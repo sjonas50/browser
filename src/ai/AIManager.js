@@ -8,14 +8,27 @@ class AIManager extends EventEmitter {
     this.models = new Map();
     this.activeModel = null;
     this.claudeHandler = null;
+    this.knowledgeBaseManager = null;
     this.config = {
       defaultModel: 'claude-opus-4-20250514',  // Claude 4 Opus
       maxTokens: 2048,
       temperature: 0.7,
       useClaudeAPI: true,
-      cacheSize: 100
+      cacheSize: 100,
+      ragConfig: {
+        enabled: true,
+        contextSize: 5,
+        scoreThreshold: 0.7,
+        mode: 'augment' // augment, priority, only
+      }
     };
     this.queryCache = new Map();
+    this.knowledgeSettings = {
+      enabled: true,
+      mode: 'augment',
+      currentCollection: 'personal',
+      sessionId: null
+    };
     
     // Initialize logger
     this.logger = winston.createLogger({
@@ -51,6 +64,16 @@ class AIManager extends EventEmitter {
     }
   }
 
+  setKnowledgeBaseManager(knowledgeBaseManager) {
+    this.knowledgeBaseManager = knowledgeBaseManager;
+    this.logger.info('Knowledge base manager connected to AI Manager');
+  }
+
+  updateKnowledgeSettings(settings) {
+    this.knowledgeSettings = { ...this.knowledgeSettings, ...settings };
+    this.logger.info('Knowledge settings updated:', this.knowledgeSettings);
+  }
+
   async loadModel(modelName) {
     try {
       console.log(`Loading model: ${modelName}`);
@@ -80,7 +103,8 @@ class AIManager extends EventEmitter {
     
     this.logger.info('Processing query', { 
       query: query.substring(0, 50) + '...', 
-      hasContext: !!context.url 
+      hasContext: !!context.url,
+      knowledgeEnabled: this.knowledgeSettings.enabled 
     });
     
     if (this.queryCache.has(cacheKey)) {
@@ -92,18 +116,27 @@ class AIManager extends EventEmitter {
       // Privacy check
       const sanitizedQuery = this.sanitizeQuery(query);
       
+      // Check if knowledge base is enabled and available
+      let knowledgeContext = null;
+      if (this.knowledgeSettings.enabled && this.knowledgeBaseManager) {
+        knowledgeContext = await this.retrieveKnowledgeContext(sanitizedQuery, context);
+      }
+      
+      // Prepare enhanced context
+      const enhancedContext = this.prepareEnhancedContext(context, knowledgeContext);
+      
       let response;
       
       if (this.config.useClaudeAPI && this.claudeHandler) {
-        // Use Claude API
-        this.logger.debug('Using Claude API for query');
-        response = await this.claudeHandler.processQuery(sanitizedQuery, context);
+        // Use Claude API with enhanced context
+        this.logger.debug('Using Claude API for query with knowledge context');
+        response = await this.claudeHandler.processQuery(sanitizedQuery, enhancedContext);
       } else {
         // Fallback to local model simulation
         this.logger.warn('Claude API not available, using fallback');
         const complexity = this.assessQueryComplexity(sanitizedQuery);
         const model = this.selectModelByComplexity(complexity);
-        const result = await this.runInference(sanitizedQuery, context, model);
+        const result = await this.runInference(sanitizedQuery, enhancedContext, model);
         response = result.response;
       }
       
@@ -167,6 +200,108 @@ class AIManager extends EventEmitter {
       this.queryCache.delete(firstKey);
     }
     this.queryCache.set(key, response);
+  }
+
+  async retrieveKnowledgeContext(query, context) {
+    try {
+      this.logger.info('Retrieving knowledge context for query');
+      
+      // Determine which collections to search
+      const searchOptions = {
+        collections: [],
+        includeSession: false,
+        sessionId: this.knowledgeSettings.sessionId,
+        limit: this.config.ragConfig.contextSize || 5
+      };
+      
+      // Add current collection if in permanent mode
+      if (this.knowledgeSettings.currentCollection) {
+        searchOptions.collections.push(this.knowledgeSettings.currentCollection);
+      }
+      
+      // Include session if specified
+      if (this.knowledgeSettings.sessionId) {
+        searchOptions.includeSession = true;
+      }
+      
+      // Perform search
+      const results = await this.knowledgeBaseManager.search(query, searchOptions);
+      
+      // Filter by score threshold
+      const relevantResults = results.filter(
+        result => result.maxScore >= this.config.ragConfig.scoreThreshold
+      );
+      
+      this.logger.info(`Found ${relevantResults.length} relevant knowledge documents`);
+      
+      return relevantResults;
+    } catch (error) {
+      this.logger.error('Failed to retrieve knowledge context:', error);
+      return null;
+    }
+  }
+
+  prepareEnhancedContext(originalContext, knowledgeContext) {
+    const enhancedContext = { ...originalContext };
+    
+    if (!knowledgeContext || knowledgeContext.length === 0) {
+      return enhancedContext;
+    }
+    
+    // Build knowledge context based on mode
+    let knowledgeText = '';
+    
+    switch (this.knowledgeSettings.mode) {
+      case 'augment':
+        // Add knowledge as supplementary information
+        knowledgeText = '\n\nRelevant information from personal knowledge base:\n';
+        knowledgeContext.forEach((result, idx) => {
+          knowledgeText += `\n${idx + 1}. ${result.title}:\n`;
+          result.chunks.forEach(chunk => {
+            knowledgeText += `   - ${chunk.content.substring(0, 200)}...\n`;
+          });
+        });
+        enhancedContext.knowledgeBase = knowledgeText;
+        break;
+        
+      case 'priority':
+        // Prioritize knowledge base content
+        knowledgeText = 'IMPORTANT - Use this information from personal knowledge base as primary source:\n';
+        knowledgeContext.forEach((result, idx) => {
+          knowledgeText += `\n${idx + 1}. ${result.title}:\n`;
+          result.chunks.forEach(chunk => {
+            knowledgeText += `${chunk.content}\n`;
+          });
+        });
+        knowledgeText += '\n\nAdditional context:\n';
+        enhancedContext.primaryContext = knowledgeText;
+        break;
+        
+      case 'only':
+        // Only use knowledge base content
+        knowledgeText = 'Answer based ONLY on this information from personal knowledge base:\n';
+        knowledgeContext.forEach((result, idx) => {
+          knowledgeText += `\n${idx + 1}. ${result.title}:\n`;
+          result.chunks.forEach(chunk => {
+            knowledgeText += `${chunk.content}\n`;
+          });
+        });
+        enhancedContext.knowledgeOnly = knowledgeText;
+        enhancedContext.restrictToKnowledge = true;
+        break;
+    }
+    
+    // Add metadata about knowledge sources
+    enhancedContext.knowledgeSources = knowledgeContext.map(result => ({
+      title: result.title,
+      source: result.source,
+      score: result.maxScore,
+      chunks: result.chunks.length
+    }));
+    
+    this.logger.debug('Prepared enhanced context with knowledge base');
+    
+    return enhancedContext;
   }
 
   async shutdown() {

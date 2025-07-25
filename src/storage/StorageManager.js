@@ -26,6 +26,20 @@ class StorageManager extends EventEmitter {
             privacyLevel: 'high',
             localOnly: true
           }
+        },
+        knowledgeBase: {
+          type: 'object',
+          default: {
+            enabled: true,
+            collections: {},
+            sessions: {},
+            settings: {
+              autoIndex: true,
+              encryptDocuments: true,
+              syncEnabled: false,
+              embeddingModel: 'text-embedding-ada-002'
+            }
+          }
         }
       }
     });
@@ -145,10 +159,33 @@ class StorageManager extends EventEmitter {
     const sanitizedEntry = {
       timestamp: Date.now(),
       title: entry.title,
-      domain: new URL(entry.url).hostname,
-      // Don't store full URL for privacy
       category: entry.category
     };
+    
+    // Only add domain if URL is provided
+    if (entry.url) {
+      try {
+        sanitizedEntry.domain = new URL(entry.url).hostname;
+        sanitizedEntry.url = entry.url; // Store full URL for visits
+      } catch (e) {
+        // Invalid URL, skip domain
+      }
+    }
+    
+    // Add type if provided (for knowledge documents)
+    if (entry.type) {
+      sanitizedEntry.type = entry.type;
+    }
+    
+    // Add search-specific fields
+    if (entry.query) {
+      sanitizedEntry.query = entry.query;
+    }
+    
+    // Add results metadata for searches
+    if (entry.results) {
+      sanitizedEntry.results = entry.results;
+    }
     
     history.unshift(sanitizedEntry);
     
@@ -212,6 +249,93 @@ class StorageManager extends EventEmitter {
   async shutdown() {
     this.cache.clear();
     this.emit('shutdown');
+  }
+
+  // Knowledge Base specific methods
+  async getKnowledgeBase() {
+    return await this.get('knowledgeBase', true);
+  }
+
+  async updateKnowledgeBase(data) {
+    const current = await this.getKnowledgeBase();
+    const updated = { ...current, ...data };
+    await this.set('knowledgeBase', updated, true);
+    return updated;
+  }
+
+  async getKnowledgeCollections() {
+    const kb = await this.getKnowledgeBase();
+    return kb.collections || {};
+  }
+
+  async updateKnowledgeCollection(collectionId, data) {
+    const kb = await this.getKnowledgeBase();
+    kb.collections[collectionId] = {
+      ...kb.collections[collectionId],
+      ...data,
+      updatedAt: new Date().toISOString()
+    };
+    await this.set('knowledgeBase', kb, true);
+    return kb.collections[collectionId];
+  }
+
+  async deleteKnowledgeCollection(collectionId) {
+    const kb = await this.getKnowledgeBase();
+    delete kb.collections[collectionId];
+    await this.set('knowledgeBase', kb, true);
+    this.emit('collection-deleted', collectionId);
+  }
+
+  async getKnowledgeSessions() {
+    const kb = await this.getKnowledgeBase();
+    return kb.sessions || {};
+  }
+
+  async updateKnowledgeSession(sessionId, data) {
+    const kb = await this.getKnowledgeBase();
+    kb.sessions[sessionId] = {
+      ...kb.sessions[sessionId],
+      ...data,
+      updatedAt: new Date().toISOString()
+    };
+    await this.set('knowledgeBase', kb, true);
+    return kb.sessions[sessionId];
+  }
+
+  async deleteKnowledgeSession(sessionId) {
+    const kb = await this.getKnowledgeBase();
+    delete kb.sessions[sessionId];
+    await this.set('knowledgeBase', kb, true);
+    this.emit('session-deleted', sessionId);
+  }
+
+  async getKnowledgeSettings() {
+    const kb = await this.getKnowledgeBase();
+    return kb.settings;
+  }
+
+  async updateKnowledgeSettings(settings) {
+    const kb = await this.getKnowledgeBase();
+    kb.settings = { ...kb.settings, ...settings };
+    await this.set('knowledgeBase', kb, true);
+    this.emit('knowledge-settings-updated', kb.settings);
+    return kb.settings;
+  }
+
+  // Add document metadata to history with knowledge base tracking
+  async addDocumentToHistory(document) {
+    const entry = {
+      timestamp: Date.now(),
+      type: 'knowledge_document',
+      documentId: document.id,
+      title: document.title,
+      collection: document.collection,
+      session: document.session,
+      source: document.source
+    };
+    
+    await this.addToHistory(entry);
+    return true;
   }
 }
 

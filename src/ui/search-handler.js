@@ -76,13 +76,20 @@ class SearchHandler {
         };
 
         try {
-            // Step 1: Get initial AI response
+            // Step 1: Get initial AI response with knowledge base context
             progress('analyzing', `🤔 Analyzing your question: "${query}"`);
+            progress('knowledge-search', `📚 Searching your personal knowledge base...`);
+            
+            // This will go through the main process AIManager which includes knowledge base
             const initialResponse = await this.aiHandler.processQuery(
                 `Answer this question concisely: ${query}`,
-                { isSearch: true }
+                { 
+                    isSearch: true,
+                    includeKnowledge: true,
+                    searchQuery: query 
+                }
             );
-            progress('initial-response', `✅ Initial AI response generated`);
+            progress('initial-response', `✅ Initial AI response generated with knowledge base context`);
 
             // Step 2: Perform web search
             progress('searching', `🔍 Searching the web for: "${query}"`);
@@ -226,22 +233,28 @@ class SearchHandler {
             const synthesisPrompt = `
 Original question: ${query}
 
-Your initial answer: ${aiResponse}
+Your initial answer (which may include personal knowledge base information): ${aiResponse}
 
 Top web search results:
 ${webSummary}
 
-Based on the web results, provide an updated, comprehensive answer that:
-1. Corrects any inaccuracies in your initial response
-2. Adds relevant information from the web results
-3. Cites sources when appropriate
-4. Remains concise and directly answers the question
+Based on the web results AND any personal knowledge base information, provide an updated, comprehensive answer that:
+1. Prioritizes information from the personal knowledge base when available
+2. Corrects any inaccuracies using web results
+3. Adds relevant information from the web results
+4. Clearly distinguishes between personal knowledge and web sources
+5. Remains concise and directly answers the question
 
 Updated answer:`;
 
             const synthesizedAnswer = await this.aiHandler.processQuery(
                 synthesisPrompt,
-                { isSearch: true, synthesis: true }
+                { 
+                    isSearch: true, 
+                    synthesis: true,
+                    includeKnowledge: true,
+                    searchQuery: query
+                }
             );
 
             return synthesizedAnswer;
@@ -274,7 +287,8 @@ Updated answer:`;
             sections.push({
                 type: 'thought-process',
                 title: '🧠 AI Thought Process',
-                steps: searchData.steps
+                steps: searchData.steps,
+                hasKnowledgeBase: searchData.usedKnowledgeBase
             });
         }
 
@@ -282,8 +296,18 @@ Updated answer:`;
         if (searchData.finalAnswer) {
             sections.push({
                 type: 'ai-answer',
-                title: '✨ Final Answer',
-                content: searchData.finalAnswer
+                title: searchData.usedKnowledgeBase ? '✨ Final Answer (📚 + 🌐)' : '✨ Final Answer',
+                content: searchData.finalAnswer,
+                sources: searchData.knowledgeSources
+            });
+        }
+
+        // Knowledge base results section
+        if (searchData.knowledgeResults && searchData.knowledgeResults.length > 0) {
+            sections.push({
+                type: 'knowledge-results',
+                title: '📚 From Your Knowledge Base',
+                results: searchData.knowledgeResults
             });
         }
 
@@ -291,7 +315,7 @@ Updated answer:`;
         if (searchData.webResults && searchData.webResults.length > 0) {
             sections.push({
                 type: 'web-results',
-                title: '🔍 Sources Used',
+                title: '🔍 Web Sources',
                 results: searchData.webResults.slice(0, 3)
             });
         }
@@ -299,7 +323,7 @@ Updated answer:`;
         // Search more link
         sections.push({
             type: 'search-more',
-            content: 'View all search results',
+            content: 'View all web search results',
             url: searchData.searchUrl
         });
 

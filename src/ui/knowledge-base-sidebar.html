@@ -1,0 +1,798 @@
+<!-- Knowledge Base Sidebar -->
+<div id="knowledge-sidebar" class="knowledge-sidebar collapsed">
+    <!-- Toggle Button -->
+    <button id="knowledge-toggle" class="knowledge-toggle" title="Toggle Knowledge Base">
+        <span class="toggle-icon">📚</span>
+    </button>
+    
+    <!-- Sidebar Content -->
+    <div class="sidebar-content">
+        <!-- Header -->
+        <div class="sidebar-header">
+            <h2>Knowledge Base</h2>
+            <div class="header-actions">
+                <button class="icon-btn" id="kb-settings" title="Settings">⚙️</button>
+                <button class="icon-btn" id="kb-add" title="Add Document">➕</button>
+                <button class="icon-btn" id="kb-close" title="Close">✕</button>
+            </div>
+        </div>
+        
+        <!-- Knowledge Toggle -->
+        <div class="knowledge-toggle-section">
+            <label class="toggle-container">
+                <input type="checkbox" id="use-knowledge-base" checked>
+                <span class="toggle-label">Use in searches</span>
+                <span class="toggle-switch"></span>
+            </label>
+            <div class="toggle-options">
+                <label class="radio-option">
+                    <input type="radio" name="kb-mode" value="augment" checked>
+                    <span>Augment results</span>
+                </label>
+                <label class="radio-option">
+                    <input type="radio" name="kb-mode" value="priority">
+                    <span>Prioritize personal</span>
+                </label>
+                <label class="radio-option">
+                    <input type="radio" name="kb-mode" value="only">
+                    <span>Personal only</span>
+                </label>
+            </div>
+        </div>
+        
+        <!-- Session/Permanent Toggle -->
+        <div class="storage-mode">
+            <div class="mode-selector">
+                <button class="mode-btn active" data-mode="permanent">
+                    <span class="mode-icon">💾</span>
+                    <span>Permanent</span>
+                </button>
+                <button class="mode-btn" data-mode="session">
+                    <span class="mode-icon">⏱️</span>
+                    <span>Session</span>
+                </button>
+            </div>
+            <p class="mode-description" id="mode-description">
+                Documents are saved permanently in your knowledge base
+            </p>
+        </div>
+        
+        <!-- Collections -->
+        <div class="collections-section">
+            <div class="section-header">
+                <h3>Collections</h3>
+                <button class="icon-btn small" id="add-collection" title="New Collection">+</button>
+            </div>
+            <div class="collections-list" id="collections-list">
+                <div class="collection-item active" data-collection="personal">
+                    <span class="collection-icon">👤</span>
+                    <span class="collection-name">Personal</span>
+                    <span class="collection-count">0</span>
+                </div>
+                <div class="collection-item" data-collection="work">
+                    <span class="collection-icon">💼</span>
+                    <span class="collection-name">Work</span>
+                    <span class="collection-count">0</span>
+                </div>
+                <div class="collection-item" data-collection="research">
+                    <span class="collection-icon">🔬</span>
+                    <span class="collection-name">Research</span>
+                    <span class="collection-count">0</span>
+                </div>
+                <div class="collection-item" data-collection="browsing">
+                    <span class="collection-icon">🌐</span>
+                    <span class="collection-name">Browsing</span>
+                    <span class="collection-count">0</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Search Box -->
+        <div class="kb-search">
+            <input type="text" 
+                   id="kb-search-input" 
+                   class="kb-search-input" 
+                   placeholder="Search your knowledge...">
+            <button class="kb-search-btn" id="kb-search-btn">
+                <span>🔍</span>
+            </button>
+        </div>
+        
+        <!-- Recent Documents -->
+        <div class="documents-section">
+            <div class="section-header">
+                <h3>Recent Documents</h3>
+                <button class="icon-btn small" id="view-all-docs" title="View All">→</button>
+            </div>
+            <div class="documents-list" id="recent-documents">
+                <div class="empty-state">
+                    <span class="empty-icon">📄</span>
+                    <p>No documents yet</p>
+                    <button class="action-btn" onclick="window.knowledgeBaseInstance.showUploadDialog()">
+                        Add your first document
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Stats -->
+        <div class="kb-stats">
+            <div class="stat-item">
+                <span class="stat-label">Total Documents</span>
+                <span class="stat-value" id="total-docs">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Storage Used</span>
+                <span class="stat-value" id="storage-used">0 MB</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Upload Dialog (Hidden by default) -->
+    <div id="upload-dialog" class="upload-dialog hidden">
+        <div class="dialog-content">
+            <div class="dialog-header">
+                <h3>Add to Knowledge Base</h3>
+                <button class="close-btn" onclick="window.knowledgeBaseInstance.hideUploadDialog()">×</button>
+            </div>
+            
+            <div class="upload-options">
+                <!-- File Upload -->
+                <div class="upload-option" onclick="window.knowledgeBaseInstance.selectFiles()">
+                    <div class="option-icon">📎</div>
+                    <div class="option-text">
+                        <h4>Upload Files</h4>
+                        <p>PDF, TXT, MD, HTML</p>
+                    </div>
+                </div>
+                
+                <!-- Current Page -->
+                <div class="upload-option" onclick="window.knowledgeBaseInstance.addCurrentPage()">
+                    <div class="option-icon">🌐</div>
+                    <div class="option-text">
+                        <h4>Current Page</h4>
+                        <p>Save this webpage</p>
+                    </div>
+                </div>
+                
+                <!-- Text Input -->
+                <div class="upload-option" onclick="window.knowledgeBaseInstance.showTextInput()">
+                    <div class="option-icon">✏️</div>
+                    <div class="option-text">
+                        <h4>Add Text</h4>
+                        <p>Type or paste content</p>
+                    </div>
+                </div>
+                
+                <!-- Import -->
+                <div class="upload-option" onclick="window.knowledgeBaseInstance.importKnowledge()">
+                    <div class="option-icon">📥</div>
+                    <div class="option-text">
+                        <h4>Import</h4>
+                        <p>From other sources</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- File Input (Hidden) -->
+            <input type="file" 
+                   id="file-input" 
+                   class="hidden" 
+                   multiple 
+                   accept=".pdf,.txt,.md,.html,.json">
+            
+            <!-- Text Input Area (Hidden by default) -->
+            <div id="text-input-area" class="text-input-area hidden">
+                <input type="text" 
+                       id="doc-title" 
+                       class="doc-title-input" 
+                       placeholder="Document title...">
+                <textarea id="doc-content" 
+                          class="doc-content-input" 
+                          placeholder="Enter or paste your content here..."></textarea>
+                <div class="input-actions">
+                    <select id="target-collection" class="collection-select">
+                        <option value="personal">Personal</option>
+                        <option value="work">Work</option>
+                        <option value="research">Research</option>
+                    </select>
+                    <button class="action-btn" onclick="window.knowledgeBaseInstance.saveTextDocument()">Save</button>
+                    <button class="text-btn" onclick="window.knowledgeBaseInstance.cancelTextInput()">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Knowledge Base Sidebar Styles */
+.knowledge-sidebar {
+    position: fixed;
+    right: 400px; /* Next to AI sidebar */
+    top: 60px;
+    bottom: 25px;
+    width: 320px;
+    background: var(--bg-secondary);
+    border-left: 1px solid var(--border-color);
+    display: flex;
+    transition: transform 0.3s ease;
+    z-index: 99;
+}
+
+.knowledge-sidebar.collapsed {
+    transform: translateX(calc(100% - 48px));
+}
+
+.knowledge-sidebar.collapsed .sidebar-content {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Toggle Button */
+.knowledge-toggle {
+    position: absolute;
+    left: -48px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 48px;
+    height: 64px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-right: none;
+    border-radius: 8px 0 0 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.knowledge-toggle:hover {
+    background: rgba(96, 87, 255, 0.1);
+    border-color: var(--accent-color);
+}
+
+/* Content Layout */
+.sidebar-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    overflow-y: auto;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+/* Knowledge Toggle Section */
+.knowledge-toggle-section {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.toggle-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    cursor: pointer;
+}
+
+.toggle-switch {
+    width: 48px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    position: relative;
+    transition: background 0.3s ease;
+}
+
+.toggle-switch::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    top: 2px;
+    left: 2px;
+    transition: transform 0.3s ease;
+}
+
+input[type="checkbox"]:checked + .toggle-label + .toggle-switch {
+    background: var(--accent-color);
+}
+
+input[type="checkbox"]:checked + .toggle-label + .toggle-switch::after {
+    transform: translateX(24px);
+}
+
+input[type="checkbox"] {
+    display: none;
+}
+
+.toggle-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.radio-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+}
+
+.radio-option input[type="radio"] {
+    width: 16px;
+    height: 16px;
+}
+
+/* Storage Mode */
+.storage-mode {
+    margin-bottom: 20px;
+}
+
+.mode-selector {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.mode-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.mode-btn.active {
+    background: rgba(96, 87, 255, 0.1);
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+}
+
+.mode-description {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    text-align: center;
+}
+
+/* Collections */
+.collections-section {
+    margin-bottom: 20px;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.section-header h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.collections-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.collection-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.collection-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.collection-item.active {
+    background: rgba(96, 87, 255, 0.1);
+    border-color: var(--accent-color);
+}
+
+.collection-icon {
+    font-size: 18px;
+}
+
+.collection-name {
+    flex: 1;
+    font-size: 13px;
+}
+
+.collection-count {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+/* Search Box */
+.kb-search {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.kb-search-input {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: white;
+    font-size: 13px;
+}
+
+.kb-search-btn {
+    width: 36px;
+    height: 36px;
+    background: var(--accent-color);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+/* Documents List */
+.documents-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.document-item {
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.document-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.document-title {
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.document-meta {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.empty-icon {
+    font-size: 48px;
+    display: block;
+    margin-bottom: 12px;
+    opacity: 0.3;
+}
+
+.empty-state p {
+    margin-bottom: 16px;
+    font-size: 13px;
+}
+
+/* Stats */
+.kb-stats {
+    margin-top: auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-label {
+    display: block;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 4px;
+}
+
+.stat-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--accent-color);
+}
+
+/* Upload Dialog */
+.upload-dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+}
+
+.upload-dialog.hidden {
+    display: none;
+}
+
+.dialog-content {
+    background: var(--bg-secondary);
+    border-radius: 16px;
+    padding: 24px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.dialog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.dialog-header h3 {
+    font-size: 20px;
+    margin: 0;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+}
+
+.upload-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.upload-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.upload-option:hover {
+    background: rgba(96, 87, 255, 0.1);
+    border-color: var(--accent-color);
+    transform: translateY(-2px);
+}
+
+.option-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+}
+
+.option-text h4 {
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.option-text p {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* Text Input Area */
+.text-input-area {
+    margin-top: 20px;
+}
+
+.doc-title-input {
+    width: 100%;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: white;
+    font-size: 14px;
+    margin-bottom: 12px;
+}
+
+.doc-content-input {
+    width: 100%;
+    min-height: 200px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: white;
+    font-size: 13px;
+    resize: vertical;
+}
+
+.input-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+    align-items: center;
+}
+
+.collection-select {
+    flex: 1;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    color: white;
+    font-size: 13px;
+}
+
+/* Buttons */
+.icon-btn {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    font-size: 18px;
+    padding: 4px;
+    transition: all 0.2s ease;
+}
+
+.icon-btn:hover {
+    color: var(--accent-color);
+}
+
+.icon-btn.small {
+    font-size: 14px;
+}
+
+.action-btn {
+    padding: 8px 16px;
+    background: var(--accent-color);
+    border: none;
+    border-radius: 6px;
+    color: white;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+    background: #5a51ff;
+    transform: translateY(-1px);
+}
+
+.text-btn {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.text-btn:hover {
+    color: white;
+}
+
+/* Scrollbar */
+.sidebar-content::-webkit-scrollbar,
+.documents-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.sidebar-content::-webkit-scrollbar-track,
+.documents-list::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.sidebar-content::-webkit-scrollbar-thumb,
+.documents-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+}
+
+/* Upload Progress */
+.upload-progress {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+    width: 300px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 1001;
+}
+
+.progress-text {
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.progress-bar {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--accent-color);
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+.progress-status {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    text-align: right;
+}
+
+/* Document Preview */
+.document-preview {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-top: 4px;
+    line-height: 1.4;
+}
+
+/* Bookmark Icon */
+.bookmark-icon {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+</style>

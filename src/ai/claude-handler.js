@@ -62,12 +62,33 @@ class ClaudeHandler {
                 systemPrompt += '\n\nYou are helping with a web search. Be concise and factual.';
             }
             
+            // Handle knowledge base context
+            let enhancedQuery = query;
+            
+            if (context.knowledgeOnly) {
+                // Only use knowledge base content
+                systemPrompt += '\n\nIMPORTANT: Base your response ONLY on the provided knowledge base information. Do not use external knowledge.';
+                enhancedQuery = context.knowledgeOnly + '\n\nUser query: ' + query;
+            } else if (context.primaryContext) {
+                // Prioritize knowledge base content
+                systemPrompt += '\n\nIMPORTANT: Prioritize the provided personal knowledge base information in your response.';
+                enhancedQuery = context.primaryContext + '\n\nUser query: ' + query;
+            } else if (context.knowledgeBase) {
+                // Augment with knowledge base
+                enhancedQuery = query + '\n' + context.knowledgeBase;
+            }
+            
+            // Add knowledge sources info if available
+            if (context.knowledgeSources && context.knowledgeSources.length > 0) {
+                systemPrompt += `\n\nKnowledge sources used: ${context.knowledgeSources.map(s => s.title).join(', ')}`;
+            }
+            
             // Make API request
             const response = await this.makeAPIRequest({
                 messages: [
                     {
                         role: 'user',
-                        content: query
+                        content: enhancedQuery
                     }
                 ],
                 system: systemPrompt
